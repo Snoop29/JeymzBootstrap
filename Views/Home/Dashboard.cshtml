@@ -1,0 +1,151 @@
+﻿@model List<BOOTSTRAP.Models.User>
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<section class="page-section" id="dashboard" style="padding-top: 7rem; padding-bottom: 5rem;">
+    <div class="container px-4 px-lg-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-uppercase text-secondary mb-0">Welcome, @ViewData["LoggedInUser"]</h2>
+            <a asp-controller="Home" asp-action="Logout" class="btn btn-outline-secondary">Log out</a>
+        </div>
+
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-hover align-middle mb-0 bg-white" id="usersTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr data-id="@u.Id">
+                            <td>@u.Id</td>
+                            <td class="cell-fullname">@u.FullName</td>
+                            <td class="cell-email">@u.Email</td>
+                            <td class="cell-password">@u.Password</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary btn-edit">Edit</button>
+                                <button class="btn btn-sm btn-danger btn-delete">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Edit modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editId" />
+                    <div class="form-floating mb-3">
+                        <input class="form-control" id="editFullName" required />
+                        <label for="editFullName">Full name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control" id="editEmail" type="email" required />
+                        <label for="editEmail">Email address</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control" id="editPassword" type="text" required />
+                        <label for="editPassword">Password</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+            // Open edit modal pre-filled with the row's current data
+            $('#usersTable').on('click', '.btn-edit', function () {
+                var row = $(this).closest('tr');
+                $('#editId').val(row.data('id'));
+                $('#editFullName').val(row.find('.cell-fullname').text());
+                $('#editEmail').val(row.find('.cell-email').text());
+                $('#editPassword').val(row.find('.cell-password').text());
+                editModal.show();
+            });
+
+            // Submit edit
+            $('#editForm').on('submit', function (e) {
+                e.preventDefault();
+                var payload = {
+                    id: parseInt($('#editId').val()),
+                    fullName: $('#editFullName').val(),
+                    email: $('#editEmail').val(),
+                    password: $('#editPassword').val()
+                };
+
+                $.ajax({
+                    url: '@Url.Action("EditUser", "Home")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (response) {
+                        if (response.error) {
+                            alert('Database error: ' + response.error);
+                            return;
+                        }
+                        var row = $('tr[data-id="' + payload.id + '"]');
+                        row.find('.cell-fullname').text(payload.fullName);
+                        row.find('.cell-email').text(payload.email);
+                        row.find('.cell-password').text(payload.password);
+                        editModal.hide();
+                    },
+                    error: function (xhr) {
+                        alert('Something went wrong. Status: ' + xhr.status);
+                    }
+                });
+            });
+
+            // Delete
+            $('#usersTable').on('click', '.btn-delete', function () {
+                var row = $(this).closest('tr');
+                var id = row.data('id');
+
+                if (!confirm('Delete this user?')) return;
+
+                $.ajax({
+                    url: '@Url.Action("DeleteUser", "Home")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: id }),
+                    success: function (response) {
+                        if (response.error) {
+                            alert('Database error: ' + response.error);
+                            return;
+                        }
+                        row.remove();
+                    },
+                    error: function (xhr) {
+                        alert('Something went wrong. Status: ' + xhr.status);
+                    }
+                });
+            });
+        });
+    </script>
+}

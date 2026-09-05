@@ -65,13 +65,17 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
-                    success: function (response) {
-                        var message =
-                            'Email: ' + response.email + '\n' +
-                            'Password: ' + response.password;
-
-                        alert(message);
-                    },
+                            success: function (response) {
+            if (response.error) {
+                alert('Database error: ' + response.error);
+                return;
+            }
+            if (response.success) {
+                window.location.href = '@Url.Action("Dashboard", "Home")';
+            } else {
+                alert(response.message || 'Login failed.');
+            }
+        },
                     error: function (xhr) {
                         alert('Something went wrong. Status: ' + xhr.status);
                     }

@@ -85,5 +85,17 @@
             string query = "DELETE FROM " + tableName + " WHERE " + field + " = " +Id;
             return query;
         }
+        // SELECT ALL (for the dashboard table)
+        public static string GenerateSelectAllQuery(string tableName)
+        {
+            return "SELECT Id, FullName, Email, Password FROM " + tableName;
+        }
+
+        // Used only for checking login credentials
+        public string GenerateLoginQuery(string tableName)
+        {
+            return "SELECT Id, FullName, Email FROM " + tableName +
+                   " WHERE Email = '" + Email + "' AND Password = '" + Password + "'";
+        }
     }
 }

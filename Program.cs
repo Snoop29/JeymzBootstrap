@@ -1,15 +1,21 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// --- all builder.Services.Add... calls go here ---
 builder.Services.AddControllersWithViews();
+// ...your existing services...
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+});
 
-var app = builder.Build();
+var app = builder.Build();   // <-- services get locked in here
 
-// Configure the HTTP request pipeline.
+// --- everything below is app.Use... / app.Map... ---
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -18,26 +24,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();          // <-- must come after UseRouting(), before UseAuthorization()/MapControllerRoute
 app.UseAuthorization();
 
-    app.MapControllerRoute(
+app.MapControllerRoute(
     name: "Login",
     pattern: "Login",
-    defaults: new
-    {
-        controller = "Home",
-        action = "Login"
-    });
-
-app.MapControllerRoute(
-    name: "Register",
-    pattern: "Register",
-    defaults: new
-    {
-        controller = "Home",
-        action = "Register"
-    });
-
+    defaults: new { controller = "Home", action = "Login" }
+);
 
 app.MapControllerRoute(
     name: "default",
